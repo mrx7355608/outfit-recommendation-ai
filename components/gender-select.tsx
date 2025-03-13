@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-type Gender = "Male" | "Female" | "Non-binary" | "Prefer not to say" | null;
+type Gender = "Male" | "Female" | null;
 
 interface GenderSelectProps {
   onSelect?: (gender: Gender) => void;
@@ -53,20 +53,6 @@ export function GenderSelect({ onSelect }: GenderSelectProps) {
           className="flex justify-between"
         >
           Female {selected === "Female" && <Check className="h-4 w-4" />}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => handleSelect("Non-binary")}
-          className="flex justify-between"
-        >
-          Non-binary{" "}
-          {selected === "Non-binary" && <Check className="h-4 w-4" />}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => handleSelect("Prefer not to say")}
-          className="flex justify-between"
-        >
-          Prefer not to say{" "}
-          {selected === "Prefer not to say" && <Check className="h-4 w-4" />}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

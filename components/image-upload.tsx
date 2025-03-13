@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface ImageUploadProps {
   onImageUpload?: (file: File) => void;
@@ -45,10 +46,10 @@ export function ImageUpload({ onImageUpload, className }: ImageUploadProps) {
   const handleFile = (file: File) => {
     // Create preview
     const reader = new FileReader();
+    reader.readAsDataURL(file);
     reader.onload = () => {
       setPreview(reader.result as string);
     };
-    reader.readAsDataURL(file);
 
     // Call callback if provided
     if (onImageUpload) {
@@ -78,17 +79,20 @@ export function ImageUpload({ onImageUpload, className }: ImageUploadProps) {
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
         onChange={handleChange}
-        className="hidden"
+        name="file-upload"
+        id="user-file-upload"
+        className="inline opacity-0"
       />
 
       {preview ? (
         <div className="w-full">
-          <img
+          <Image
             src={preview || "/placeholder.svg"}
             alt="Preview"
             className="max-h-64 mx-auto object-contain rounded-md"
+            width={200}
+            height={200}
           />
           <Button
             variant="outline"
