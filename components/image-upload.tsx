@@ -7,34 +7,38 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 
 interface ImageUploadProps {
-  onImageUpload?: (file: File) => void;
+  userUploadedImage: File | null;
+  onImageUpload: (file: File) => void;
   className?: string;
 }
 
-export function ImageUpload({ onImageUpload, className }: ImageUploadProps) {
+export function ImageUpload({
+  userUploadedImage,
+  onImageUpload,
+  className,
+}: ImageUploadProps) {
   const [dragActive, setDragActive] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFile(e.dataTransfer.files[0]);
-    }
-  };
+  // const handleDrag = (e: React.DragEvent) => {
+  //   e.preventDefault();
+  //   e.stopPropagation();
+  //   if (e.type === "dragenter" || e.type === "dragover") {
+  //     setDragActive(true);
+  //   } else if (e.type === "dragleave") {
+  //     setDragActive(false);
+  //   }
+  // };
+  //
+  // const handleDrop = (e: React.DragEvent) => {
+  //   e.preventDefault();
+  //   e.stopPropagation();
+  //   setDragActive(false);
+  //
+  //   if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+  //     handleFile(e.dataTransfer.files[0]);
+  //   }
+  // };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
@@ -44,17 +48,7 @@ export function ImageUpload({ onImageUpload, className }: ImageUploadProps) {
   };
 
   const handleFile = (file: File) => {
-    // Create preview
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      setPreview(reader.result as string);
-    };
-
-    // Call callback if provided
-    if (onImageUpload) {
-      onImageUpload(file);
-    }
+    onImageUpload(file);
   };
 
   const handleButtonClick = () => {
@@ -68,13 +62,13 @@ export function ImageUpload({ onImageUpload, className }: ImageUploadProps) {
         dragActive
           ? "border-primary bg-primary/5"
           : "border-muted-foreground/20",
-        preview ? "h-auto" : "h-40",
+        userUploadedImage ? "h-auto" : "h-40",
         className,
       )}
-      onDragEnter={handleDrag}
-      onDragLeave={handleDrag}
-      onDragOver={handleDrag}
-      onDrop={handleDrop}
+      // onDragEnter={handleDrag}
+      // onDragLeave={handleDrag}
+      // onDragOver={handleDrag}
+      // onDrop={handleDrop}
     >
       <input
         ref={inputRef}
@@ -82,15 +76,14 @@ export function ImageUpload({ onImageUpload, className }: ImageUploadProps) {
         onChange={handleChange}
         name="file-upload"
         id="user-file-upload"
-        className="inline opacity-0"
+        className="hidden"
       />
-
-      {preview ? (
+      {userUploadedImage ? (
         <div className="w-full">
           <Image
-            src={preview || "/placeholder.svg"}
+            src={URL.createObjectURL(userUploadedImage)}
             alt="Preview"
-            className="max-h-64 mx-auto object-contain rounded-md"
+            className="max-h-48 mx-auto object-contain rounded-md"
             width={200}
             height={200}
           />
