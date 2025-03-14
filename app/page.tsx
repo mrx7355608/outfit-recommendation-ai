@@ -3,7 +3,7 @@ import { Chat } from "@/components/chat";
 import { useEffect, useState } from "react";
 
 export default function Home() {
-  const DEFAULT_REGION = "Washington";
+  const DEFAULT_REGION = "Punjab";
   const [region, setRegion] = useState("");
 
   // Fetch user region from his ip

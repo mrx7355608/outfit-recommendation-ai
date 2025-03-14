@@ -36,18 +36,24 @@ export function Chat({ region }: { region: string }) {
 
   // Generate outfit using flux-dev model api
   const generateOutfit = async () => {
-    const prompt = `(${gender}:1.0)(outfit inspired by traditional fashion from ${region}:1.2), (designed for ${ocassion}:1.3), (season-appropriate fabrics and colors:1.1), (modern and stylish design:1.0), (high-quality textures:1.2), (natural pose:1.0), (realistic lighting:1.0), (full body view:1.1), (on location background relevant to ${region}:1.0)`;
-    const response = await fetch("/api/generate-outfits", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ prompt }),
-    });
-    const result = await response.json();
-    console.log(result);
-    const file = await urlToFile(result.result[0].url);
-    return file;
+    try {
+      const prompt = `(${gender}:1.0)(outfit inspired by fashion from ${region}:1.2), (designed for ${ocassion}:1.3), (season-appropriate fabrics and colors:1.1), (high-quality textures:1.2), (natural pose:1.0), (realistic lighting:1.0), (full body view:1.1), (on location background relevant to ${region}:1.0)`;
+      const response = await fetch("/api/generate-outfits", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt }),
+      });
+      const result = await response.json();
+      console.log({ genResult: result });
+      const file = await urlToFile(result.imageURL);
+      console.log(file);
+      return file;
+    } catch (err) {
+      console.error((err as Error).message);
+      return null;
+    }
   };
 
   // Apply outfit on the user image using stable-diffusion model api
@@ -58,18 +64,31 @@ export function Chat({ region }: { region: string }) {
     const formData = new FormData();
     formData.append("avatar_image", userUploadedImage);
     formData.append("clothing_image", outfit);
+    formData.append(
+      "background_prompt",
+      `(on background relevant to ${region})`,
+    );
 
-    const response = await fetch("/api/apply-outfit", {
+    // FIXME: Remove the rapid api keys!!!
+    const url = "https://try-on-diffusion.p.rapidapi.com/try-on-file";
+    const options = {
       method: "POST",
+      headers: {
+        "x-rapidapi-key": process.env.NEXT_PUBLIC_RAPID_API_KEY!,
+        "x-rapidapi-host": process.env.NEXT_PUBLIC_RAPID_API_HOST!,
+      },
       body: formData,
-    });
-    const result = await response.json();
+    };
+    const response = await fetch(url, options);
+    const imageURL = URL.createObjectURL(await response.blob());
+
     const newMessage = {
       id: "1",
-      image: result.image,
+      image: imageURL,
       role: "assistant",
       content: "ab",
     };
+
     setMessages((prev) => [...prev, newMessage]);
   };
 
@@ -80,7 +99,9 @@ export function Chat({ region }: { region: string }) {
 
     // Generate outfit
     const outfitImage = await generateOutfit();
-    await diffuse(outfitImage);
+    if (outfitImage) {
+      await diffuse(outfitImage);
+    }
 
     setLoading(false);
 

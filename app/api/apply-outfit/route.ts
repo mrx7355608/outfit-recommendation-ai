@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     headers: {
       "x-rapidapi-key": rapidApiKey,
       "x-rapidapi-host": rapidApiHost,
-      "Content-Type": "multipart/form-data",
+      "Content-Type": "application/x-www-form-urlencoded",
     },
     body: formData,
   };
