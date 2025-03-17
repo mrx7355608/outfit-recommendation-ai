@@ -1,6 +1,7 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { Bot, User } from "lucide-react";
+import Image from "next/image";
 
 type Message = {
   id: string;
@@ -16,11 +17,8 @@ interface ChatMessageProps {
 export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === "user";
 
-  // Simple regex to detect code blocks (this is a simplified version)
-  const hasCodeBlock = message.content.includes("```");
-
   return (
-    <div className={cn("flex gap-3 mb-6", isUser && "justify-end")}>
+    <div className={cn("flex gap-3 mb-6 w-full", isUser && "justify-end")}>
       {!isUser && (
         <Avatar className="h-8 w-8">
           <AvatarFallback className="bg-primary/10">
@@ -28,27 +26,21 @@ export function ChatMessage({ message }: ChatMessageProps) {
           </AvatarFallback>
         </Avatar>
       )}
-      <div className={cn("flex flex-col max-w-[80%]", isUser && "items-end")}>
-        <div className="text-sm font-medium mb-1">{isUser ? "You" : "v0"}</div>
-        <div
-          className={cn(
-            "rounded-lg px-4 py-2.5 text-sm",
-            isUser ? "bg-primary text-primary-foreground" : "bg-muted",
+      <div className={cn("flex w-full flex-col", isUser && "items-end")}>
+        <div className="rounded-lg px-6 py-5 w-full bg-muted">
+          {message.content && (
+            <p className="whitespace-pre-line">{message.content}</p>
           )}
-        >
           {message.image && (
-            <div className="mb-2">
-              <img
-                src={message.image || "/placeholder.svg"}
+            <div className="my-4">
+              <Image
+                src={message.image}
                 alt="Uploaded image"
-                className="max-h-64 rounded-md object-contain"
+                className="rounded-lg object-contain"
+                width={200}
+                height={200}
               />
             </div>
-          )}
-          {hasCodeBlock ? (
-            <RenderMessageWithCode content={message.content} />
-          ) : (
-            <p>{message.content}</p>
           )}
         </div>
       </div>

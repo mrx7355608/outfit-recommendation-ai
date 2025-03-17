@@ -7,10 +7,10 @@ import { SendIcon, UploadIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ChatMessage } from "@/components/chat-message";
-import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ImageUpload } from "@/components/image-upload";
 import { GenderSelect } from "@/components/gender-select";
+import { Spinner } from "./spinner";
 
 type Message = {
   id: string;
@@ -26,6 +26,7 @@ export function Chat({ region }: { region: string }) {
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [error, setError] = useState("");
 
   const urlToFile = async (imgUrl: string) => {
     const res = await fetch(imgUrl);
@@ -36,24 +37,18 @@ export function Chat({ region }: { region: string }) {
 
   // Generate outfit using flux-dev model api
   const generateOutfit = async () => {
-    try {
-      const prompt = `(${gender}:1.0)(outfit inspired by fashion from ${region}:1.2), (designed for ${ocassion}:1.3), (season-appropriate fabrics and colors:1.1), (high-quality textures:1.2), (natural pose:1.0), (realistic lighting:1.0), (full body view:1.1), (on location background relevant to ${region}:1.0)`;
-      const response = await fetch("/api/generate-outfits", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt }),
-      });
-      const result = await response.json();
-      console.log({ genResult: result });
-      const file = await urlToFile(result.imageURL);
-      console.log(file);
-      return file;
-    } catch (err) {
-      console.error((err as Error).message);
-      return null;
-    }
+    // Make request to route handler
+    const prompt = `(${gender}:1.0)(outfit inspired by traditional fashion from Karachi, Pakistan:1.2), (designed for ${ocassion}:1.3), (high-quality textures:1.2), (natural pose:1.0), (realistic lighting:1.0), (full body view:1.1)`;
+    const response = await fetch("/api/generate-outfits", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ prompt }),
+    });
+    const result = await response.json();
+    const file = await urlToFile(result.imageURL);
+    return file;
   };
 
   // Apply outfit on the user image using stable-diffusion model api
@@ -61,6 +56,7 @@ export function Chat({ region }: { region: string }) {
     if (!outfit || !userUploadedImage) {
       return;
     }
+
     const formData = new FormData();
     formData.append("avatar_image", userUploadedImage);
     formData.append("clothing_image", outfit);
@@ -81,37 +77,113 @@ export function Chat({ region }: { region: string }) {
     };
     const response = await fetch(url, options);
     const imageURL = URL.createObjectURL(await response.blob());
-
-    const newMessage = {
-      id: "1",
-      image: imageURL,
-      role: "assistant",
-      content: "ab",
-    };
-
-    setMessages((prev) => [...prev, newMessage]);
+    return imageURL;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    if (!ocassion.trim() || !gender) return;
-
-    // Generate outfit
-    const outfitImage = await generateOutfit();
-    if (outfitImage) {
-      await diffuse(outfitImage);
+    if (!ocassion.trim()) {
+      setError("Please enter an ocassion");
+      return;
+    }
+    if (!gender) {
+      setError("Please select a gender");
+      return;
+    }
+    if (!userUploadedImage) {
+      setError("Please upload your image");
+      return;
     }
 
-    setLoading(false);
+    const messageId = messages.length - 1;
+    const newMessage = {
+      id: String(messageId),
+      content: "",
+      image: "",
+      role: "assistant",
+    };
 
-    setOcassion("");
-    setShowImageUpload(false);
+    setLoading(true);
+    setError("");
+    try {
+      // Add the initial AI message
+      newMessage.content = `Generating outfit for ${ocassion} ocassion`;
+      setMessages((prev) => [...prev, newMessage]);
+
+      // Generate outfit
+      const outfitImage = await generateOutfit();
+      if (!outfitImage) {
+        updateMessage(
+          "Oops! an error occurred while generating outfit, please try again",
+          messageId,
+        );
+        return;
+      }
+
+      // Update the AI message to make it look like a streamed response
+      updateMessage(
+        "Outfit generated!\n\nApplying outfit on your image...",
+        messageId,
+      );
+
+      // Diffuse the user image with the outfit
+      const imageURL = await diffuse(outfitImage);
+      if (!imageURL) {
+        updateMessage(
+          "There was an error while applying outfit, please try again",
+          messageId,
+        );
+        return;
+      }
+
+      // Update the final message and add the image url
+      updateMessage(
+        "Operation completed!\nThis is how you will look like",
+        messageId,
+      );
+      addImageInAiMessage(messageId, imageURL);
+
+      // Display the message
+      // const newMessage = {
+      //   id: "1",
+      //   image: imageURL,
+      //   role: "assistant",
+      //   content: "ab",
+      // };
+      // setMessages((prev) => [...prev, newMessage]);
+    } catch (err) {
+      console.log((err as Error).message);
+    } finally {
+      setLoading(false);
+      setOcassion("");
+      setTimeout(() => setError(""), 5000);
+      setShowImageUpload(false);
+    }
+  };
+
+  const updateMessage = (message: string, messageId: string | number) => {
+    setMessages((prev) => {
+      const copy = prev.filter((m) => m.id !== String(messageId));
+      const msg = prev.filter((m) => m.id === String(messageId))[0];
+      msg.content += "\n";
+      msg.content += message;
+      return [...copy, msg];
+    });
+  };
+
+  const addImageInAiMessage = (messageId: number, image: string) => {
+    setMessages((prev) => {
+      prev.map((m) => {
+        if (m.id === String(messageId)) {
+          m.image = image;
+        }
+      });
+      return prev;
+    });
   };
 
   const handleImageUpload = (file: File) => {
     setUserUploadedImage(file);
-    setOcassion("");
     setShowImageUpload(false);
   };
 
@@ -133,6 +205,9 @@ export function Chat({ region }: { region: string }) {
 
       <div className="border-t bg-background p-4">
         <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-4">
+          {/* ERROR MESSAGE */}
+          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+
           {/* IMAGE UPLOAD UI */}
           {showImageUpload && (
             <ImageUpload
@@ -174,15 +249,11 @@ export function Chat({ region }: { region: string }) {
             <Button
               type="submit"
               size="icon"
-              className={cn(
-                "absolute right-2 top-2 h-8 w-12 disabled:opacity-50 disabled:cursor-not-allowed",
-              )}
-              disabled={!ocassion.trim() && !showImageUpload && !gender}
+              className="absolute right-2 top-2 h-8 w-8 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading}
             >
-              {/* <SendIcon className="h-4 w-4" /> */}
-              <span className="text-sm">
-                {loading ? "Processsing..." : "Send"}
-              </span>
+              {loading ? <Spinner /> : <SendIcon className="h-4 w-4" />}
+              <span className="sr-only">Send</span>
             </Button>
           </div>
         </form>
