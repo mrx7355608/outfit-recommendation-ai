@@ -37,8 +37,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
                 src={message.image}
                 alt="Uploaded image"
                 className="rounded-lg object-contain"
-                width={200}
-                height={200}
+                width={250}
+                height={250}
               />
             </div>
           )}

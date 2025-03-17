@@ -109,6 +109,7 @@ export function ImageUpload({
             variant="outline"
             size="sm"
             className="mt-2"
+            type="button"
             onClick={handleButtonClick}
           >
             Select File
