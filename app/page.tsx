@@ -27,7 +27,7 @@ export default function Home() {
   }, []);
 
   if (!region) {
-    return <p className="text-xl align-center">Loading...</p>;
+    return <p className="w-full h-screen text-xl align-center">Loading...</p>;
   }
 
   return (

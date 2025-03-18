@@ -3,14 +3,15 @@
 import type React from "react";
 
 import { useState } from "react";
-import { SendIcon, UploadIcon } from "lucide-react";
+import { Spinner } from "./spinner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { SendIcon, UploadIcon } from "lucide-react";
 import { ChatMessage } from "@/components/chat-message";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ImageUpload } from "@/components/image-upload";
 import { GenderSelect } from "@/components/gender-select";
-import { Spinner } from "./spinner";
+import { diffuse, generateOutfit } from "@/app/api-calls";
 
 type Message = {
   id: string;
@@ -20,144 +21,89 @@ type Message = {
 };
 
 export function Chat({ region }: { region: string }) {
+  const [error, setError] = useState("");
   const [ocassion, setOcassion] = useState("");
-  const [gender, setGender] = useState<string | null>("");
-  const [userUploadedImage, setUserUploadedImage] = useState<File | null>(null);
-  const [showImageUpload, setShowImageUpload] = useState(false);
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [error, setError] = useState("");
+  const [gender, setGender] = useState<string | null>("");
+  const [showImageUpload, setShowImageUpload] = useState(false);
+  const [userUploadedImage, setUserUploadedImage] = useState<File | null>(null);
 
-  const urlToFile = async (imgUrl: string) => {
-    const res = await fetch(imgUrl);
-    const blob = await res.blob();
-    const file = new File([blob], "outfit.png", { type: blob.type });
-    return file;
-  };
-
-  // Generate outfit using flux-dev model api
-  const generateOutfit = async () => {
-    // Make request to route handler
-    const prompt = `(${gender}:1.0)(outfit inspired by traditional fashion from Karachi, Pakistan:1.2), (designed for ${ocassion}:1.3), (high-quality textures:1.2), (natural pose:1.0), (realistic lighting:1.0), (full body view:1.1)`;
-    const response = await fetch("/api/generate-outfits", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ prompt }),
-    });
-    const result = await response.json();
-    const file = await urlToFile(result.imageURL);
-    return file;
-  };
-
-  // Apply outfit on the user image using stable-diffusion model api
-  const diffuse = async (outfit: File) => {
-    if (!outfit || !userUploadedImage) {
-      return;
+  const validInputs = () => {
+    if (!ocassion.trim()) {
+      setError("Please enter an ocassion");
+      return false;
+    }
+    if (!gender) {
+      setError("Please select a gender");
+      return false;
+    }
+    if (!userUploadedImage) {
+      setError("Please upload your image");
+      return false;
     }
 
-    const formData = new FormData();
-    formData.append("avatar_image", userUploadedImage);
-    formData.append("clothing_image", outfit);
-    formData.append(
-      "background_prompt",
-      `(on background relevant to ${region})`,
-    );
+    return true;
+  };
 
-    // FIXME: Remove the rapid api keys!!!
-    const url = "https://try-on-diffusion.p.rapidapi.com/try-on-file";
-    const options = {
-      method: "POST",
-      headers: {
-        "x-rapidapi-key": process.env.NEXT_PUBLIC_RAPID_API_KEY!,
-        "x-rapidapi-host": process.env.NEXT_PUBLIC_RAPID_API_HOST!,
-      },
-      body: formData,
-    };
-    const response = await fetch(url, options);
-    const imageURL = URL.createObjectURL(await response.blob());
-    return imageURL;
+  const resetAllStates = () => {
+    setLoading(false);
+    setOcassion("");
+    setTimeout(() => setError(""), 5000);
+    setShowImageUpload(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ocassion.trim()) {
-      setError("Please enter an ocassion");
-      return;
-    }
-    if (!gender) {
-      setError("Please select a gender");
-      return;
-    }
-    if (!userUploadedImage) {
-      setError("Please upload your image");
-      return;
-    }
 
-    const messageId = messages.length - 1;
-    const newMessage = {
-      id: String(messageId),
-      content: "",
-      image: "",
-      role: "assistant",
-    };
+    // Validate inputs
+    if (!validInputs()) {
+      return;
+    }
 
     setLoading(true);
     setError("");
+
     try {
       // Add the initial AI message
+      const messageId = messages.length - 1;
+      const newMessage = {
+        id: String(messageId),
+        content: "",
+        image: "",
+        role: "assistant",
+      };
       newMessage.content = `Generating outfit for ${ocassion} ocassion`;
       setMessages((prev) => [...prev, newMessage]);
 
       // Generate outfit
-      const outfitImage = await generateOutfit();
-      if (!outfitImage) {
-        updateMessage(
-          "Oops! an error occurred while generating outfit, please try again",
-          messageId,
-        );
-        return;
-      }
-
-      // Update the AI message to make it look like a streamed response
+      const outfitImage = await generateOutfit(gender!, ocassion);
       updateMessage(
         "Outfit generated!\n\nApplying outfit on your image...",
         messageId,
       );
 
       // Diffuse the user image with the outfit
-      const imageURL = await diffuse(outfitImage);
-      if (!imageURL) {
-        updateMessage(
-          "There was an error while applying outfit, please try again",
-          messageId,
-        );
-        return;
-      }
-
-      // Update the final message and add the image url
+      console.log("--- Diffusing ---");
+      const imageURL = await diffuse(outfitImage, userUploadedImage);
       updateMessage(
         "Operation completed!\nThis is how you will look like",
         messageId,
       );
-      addImageInAiMessage(messageId, imageURL);
 
-      // Display the message
-      // const newMessage = {
-      //   id: "1",
-      //   image: imageURL,
-      //   role: "assistant",
-      //   content: "ab",
-      // };
-      // setMessages((prev) => [...prev, newMessage]);
+      // Add image in the AI message
+      setMessages((prev) => {
+        prev.map((m) => {
+          if (m.id === String(messageId)) {
+            m.image = imageURL;
+          }
+        });
+        return prev;
+      });
     } catch (err) {
-      console.log((err as Error).message);
+      setError((err as Error).message);
     } finally {
-      setLoading(false);
-      setOcassion("");
-      setTimeout(() => setError(""), 5000);
-      setShowImageUpload(false);
+      resetAllStates();
     }
   };
 
@@ -168,17 +114,6 @@ export function Chat({ region }: { region: string }) {
       msg.content += "\n";
       msg.content += message;
       return [...copy, msg];
-    });
-  };
-
-  const addImageInAiMessage = (messageId: number, image: string) => {
-    setMessages((prev) => {
-      prev.map((m) => {
-        if (m.id === String(messageId)) {
-          m.image = image;
-        }
-      });
-      return prev;
     });
   };
 
