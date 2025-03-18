@@ -30,10 +30,10 @@ export async function POST(req: NextRequest) {
       prompt: payload.prompt || "Hello!!",
       seed: 42,
       randomize_seed: false,
-      width: 256,
-      height: 256,
+      width: 512,
+      height: 512,
       num_inference_steps: 30,
-      guidance_scale: 7.5,
+      guidance_scale: 15,
     });
 
     // Return image url as response
