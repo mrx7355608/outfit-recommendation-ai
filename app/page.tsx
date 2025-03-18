@@ -1,5 +1,6 @@
 "use client";
 import { Chat } from "@/components/chat";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useEffect, useState } from "react";
 
 export default function Home() {
@@ -31,7 +32,12 @@ export default function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col">
+    <main className="flex max-h-screen h-screen flex-col">
+      <header className="border-b p-4 flex items-center justify-between">
+        <h1 className="text-xl font-bold">Outfitss</h1>
+        <ThemeToggle />
+      </header>
+
       <Chat region={region} />
     </main>
   );
