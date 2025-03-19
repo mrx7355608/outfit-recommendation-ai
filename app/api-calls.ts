@@ -6,8 +6,12 @@ const urlToFile = async (imgUrl: string) => {
   return file;
 };
 
-export const generateOutfit = async (gender: string, ocassion: string) => {
-  const prompt = `(${gender}:1.0)(outfit inspired by traditional fashion from Karachi, Pakistan:1.2), (designed for ${ocassion}:1.3), (high-quality textures:1.2), (natural pose:1.0), (realistic lighting:1.0), (full body view:1.1)`;
+export const generateOutfit = async (
+  region: string,
+  gender: string,
+  ocassion: string,
+) => {
+  const prompt = `${ocassion}. I am a ${gender} living in ${region}`;
   const response = await fetch("/api/generate-outfits", {
     method: "POST",
     headers: {
@@ -26,7 +30,7 @@ export const generateOutfit = async (gender: string, ocassion: string) => {
     throw new Error("There wan an error in converting the outfit url to image");
   }
 
-  return file;
+  return { outfitUrl: result.imageURL, outfitImage: file };
 };
 
 export const diffuse = async (outfit: File, userUploadedImage: File | null) => {
@@ -56,4 +60,19 @@ export const diffuse = async (outfit: File, userUploadedImage: File | null) => {
 
   const imageURL = URL.createObjectURL(await response.blob());
   return imageURL;
+};
+
+export const searchGoogleLens = async (imageUrl: string) => {
+  const response = await fetch("/api/search-google-lens", {
+    method: "POST",
+    body: JSON.stringify({ imageUrl }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  if (!response.ok) {
+    throw new Error("There was an error while searching google lens");
+  }
+  const result = await response.json();
+  return result;
 };
