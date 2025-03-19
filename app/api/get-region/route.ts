@@ -20,5 +20,7 @@ export async function GET(req: NextRequest) {
   const result = await response.json();
   console.log(result);
 
-  return NextResponse.json({ region: result.region });
+  return NextResponse.json({
+    region: `${result.region},${result.city},${result.country}`,
+  });
 }
