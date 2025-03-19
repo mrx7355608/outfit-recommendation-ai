@@ -1,17 +1,12 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { IMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Bot, User } from "lucide-react";
 import Image from "next/image";
-
-type Message = {
-  id: string;
-  role: string;
-  content: string;
-  image?: string;
-};
+import Link from "next/link";
 
 interface ChatMessageProps {
-  message: Message;
+  message: IMessage;
 }
 
 export function ChatMessage({ message }: ChatMessageProps) {
@@ -28,13 +23,18 @@ export function ChatMessage({ message }: ChatMessageProps) {
       )}
       <div className={cn("flex w-full flex-col", isUser && "items-end")}>
         <div className="rounded-lg px-6 py-5 w-full bg-muted">
-          {message.content && (
-            <p className="whitespace-pre-line">{message.content}</p>
+          {message.outfitGenerated && (
+            <p>
+              Outfit generated! <br /> Applying outfit on your image...
+            </p>
           )}
-          {message.image && (
+          {message.diffusedImageUrl && (
             <div className="my-4">
+              <p>
+                Operation completed! <br /> This is how you will look like:
+              </p>
               <Image
-                src={message.image}
+                src={message.diffusedImageUrl}
                 alt="Uploaded image"
                 className="rounded-lg object-contain"
                 width={250}
@@ -42,6 +42,29 @@ export function ChatMessage({ message }: ChatMessageProps) {
               />
             </div>
           )}
+
+          {message.googleLensResponse &&
+            message.googleLensResponse.length > 0 && (
+              <div>
+                <ol>
+                  {message.googleLensResponse.map((r) => {
+                    return (
+                      <li className="flex gap-3 items-center" key={r.source}>
+                        <Link href={r.link}>
+                          <span className="font-bold">{r.source}</span>
+                        </Link>
+                        {r.price && <span>{r.price.value}</span>}
+                        {r.in_stock && (
+                          <span>
+                            {r.in_stock ? "In Stock" : "Out of Stock"}
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+            )}
         </div>
       </div>
       {isUser && (
@@ -51,20 +74,6 @@ export function ChatMessage({ message }: ChatMessageProps) {
           </AvatarFallback>
         </Avatar>
       )}
-    </div>
-  );
-}
-
-function RenderMessageWithCode({ content }: { content: string }) {
-  // This is a simplified parser for code blocks
-  // In a real app, you'd want to use a proper markdown parser
-  const parts = content.split(/(```[\s\S]*?```)/g);
-
-  return (
-    <div className="space-y-3">
-      {parts.map((part, index) => {
-        return part && <p key={index}>{part}</p>;
-      })}
     </div>
   );
 }

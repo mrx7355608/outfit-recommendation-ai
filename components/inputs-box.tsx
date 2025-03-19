@@ -7,22 +7,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { SendIcon, UploadIcon } from "lucide-react";
 import { ImageUpload } from "@/components/image-upload";
 import { GenderSelect } from "@/components/gender-select";
-import { diffuse, generateOutfit } from "@/app/api-calls";
-
-interface IMessage {
-  id: string;
-  role: string;
-  content: string;
-  image?: string;
-}
+import { diffuse, generateOutfit, searchGoogleLens } from "@/app/api-calls";
+import { IMessage } from "@/lib/types";
 
 type Props = {
+  region: string;
   messages: IMessage[];
   setMessages: Dispatch<SetStateAction<IMessage[]>>;
-  updateAIMessage: (msg: string, msgId: string | number) => void;
+  updateAIMessage: (msg: IMessage, msgId: string | number) => void;
 };
 
 export const InputsBox = ({
+  region,
   messages,
   setMessages,
   updateAIMessage,
@@ -70,38 +66,31 @@ export const InputsBox = ({
     try {
       // Add the initial AI message
       const messageId = messages.length - 1;
-      const newMessage = {
+      const newMessage: IMessage = {
         id: String(messageId),
-        content: "",
-        image: "",
         role: "assistant",
+        outfitGenerated: false,
+        diffusedImageUrl: null,
+        googleLensResponse: null,
+        content: "Generating outfit...",
       };
-      newMessage.content = `Generating outfit for ${ocassion}`;
       setMessages((prev) => [...prev, newMessage]);
 
       // Generate outfit
-      const outfitImage = await generateOutfit(gender!, ocassion);
-      updateAIMessage(
-        "Outfit generated!\n\nApplying outfit on your image...",
-        messageId,
+      const { outfitUrl, outfitImage } = await generateOutfit(
+        region,
+        gender!,
+        ocassion,
       );
+      updateAIMessage({ ...newMessage, outfitGenerated: true }, messageId);
 
       // Diffuse the user image with the outfit
       const imageURL = await diffuse(outfitImage, userUploadedImage);
-      updateAIMessage(
-        "Operation completed!\nThis is how you will look like",
-        messageId,
-      );
+      updateAIMessage({ ...newMessage, diffusedImageUrl: imageURL }, messageId);
 
-      // Add image in the AI message
-      setMessages((prev) => {
-        prev.map((m) => {
-          if (m.id === String(messageId)) {
-            m.image = imageURL;
-          }
-        });
-        return prev;
-      });
+      /* Search google lens for the outfit */
+      const googleLensResponse = await searchGoogleLens(outfitUrl);
+      updateAIMessage({ ...newMessage, googleLensResponse }, messageId);
     } catch (err) {
       setError((err as Error).message);
     } finally {

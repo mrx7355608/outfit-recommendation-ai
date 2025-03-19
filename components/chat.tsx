@@ -5,24 +5,15 @@ import type React from "react";
 import { useState } from "react";
 import { ChatMessage } from "@/components/chat-message";
 import { InputsBox } from "./inputs-box";
-
-type Message = {
-  id: string;
-  role: string;
-  content: string;
-  image?: string;
-};
+import { IMessage } from "@/lib/types";
 
 export function Chat({ region }: { region: string }) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<IMessage[]>([]);
 
-  const updateAIMessage = (message: string, messageId: string | number) => {
+  const updateAIMessage = (message: IMessage, messageId: string | number) => {
     setMessages((prev) => {
-      const copy = prev.filter((m) => m.id !== String(messageId));
-      const msg = prev.filter((m) => m.id === String(messageId))[0];
-      msg.content += "\n";
-      msg.content += message;
-      return [...copy, msg];
+      // const copy = prev.filter((m) => m.id !== String(messageId));
+      return [...prev, message];
     });
   };
 
@@ -39,6 +30,7 @@ export function Chat({ region }: { region: string }) {
 
       {/* INPUT BOX */}
       <InputsBox
+        region={region}
         messages={messages}
         setMessages={setMessages}
         updateAIMessage={updateAIMessage}

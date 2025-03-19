@@ -4,7 +4,6 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useEffect, useState } from "react";
 
 export default function Home() {
-  const DEFAULT_REGION = "Punjab";
   const [region, setRegion] = useState("");
 
   // Fetch user region from his ip
@@ -23,8 +22,7 @@ export default function Home() {
         console.log(data);
         localStorage.setItem("region", data.region);
       })
-      .catch(console.error)
-      .finally(() => setRegion(DEFAULT_REGION));
+      .catch(console.error);
   }, []);
 
   if (!region) {
