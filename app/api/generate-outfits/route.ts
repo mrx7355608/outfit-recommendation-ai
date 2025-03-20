@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       imageURL: (result as IPredictResponse).data[0].url,
     });
   } catch (error) {
-    console.error("Prediction error:", error);
-    NextResponse.json({ error: "Unable to generate outfit" });
+    console.error("Prediction error:", (error as Error).message);
+    return NextResponse.json({ error: "Unable to generate outfit" });
   }
 }

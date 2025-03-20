@@ -22,14 +22,14 @@ export async function POST(req: NextRequest) {
       engine: "google_lens",
       url: payload.imageUrl,
       api_key: googleLensApikey,
-      hl: "ur",
+      hl: "en",
       country: "pk",
     });
-    return NextResponse.json(googleLensResponse.visual_matches);
+    return NextResponse.json({ result: googleLensResponse.visual_matches });
   } catch (err) {
     console.log(err);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "There was an error while searching for the outfit" },
       { status: 500 },
     );
   }

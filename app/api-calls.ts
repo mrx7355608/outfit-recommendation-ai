@@ -11,7 +11,8 @@ export const generateOutfit = async (
   gender: string,
   ocassion: string,
 ) => {
-  const prompt = `${ocassion}. I am a ${gender} living in ${region}`;
+  const manWoman = gender === "Male" ? "man" : "woman";
+  const prompt = `(${ocassion}), (I am a ${manWoman} living in ${region}), (full body image: 3.6)`;
   const response = await fetch("/api/generate-outfits", {
     method: "POST",
     headers: {
@@ -22,7 +23,7 @@ export const generateOutfit = async (
 
   const result = await response.json();
   if (!result.imageURL) {
-    throw new Error("There was an error while generating outfit");
+    throw new Error(result.error);
   }
 
   const file = await urlToFile(result.imageURL);
@@ -71,8 +72,8 @@ export const searchGoogleLens = async (imageUrl: string) => {
     },
   });
   if (!response.ok) {
-    throw new Error("There was an error while searching google lens");
+    throw new Error("There was an error while searching for the outfit");
   }
   const result = await response.json();
-  return result;
+  return result.result;
 };
