@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       width: 512,
       height: 512,
       num_inference_steps: 30,
-      guidance_scale: 15,
+      guidance_scale: 30,
     });
 
     // Return image url as response

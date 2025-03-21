@@ -7,7 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { SendIcon, UploadIcon } from "lucide-react";
 import { ImageUpload } from "@/components/image-upload";
 import { GenderSelect } from "@/components/gender-select";
-import { diffuse, generateOutfit, searchGoogleLens } from "@/app/api-calls";
+import {
+  diffuse,
+  generateOutfit,
+  generateOutfitPromptFromGemini,
+  searchGoogleLens,
+} from "@/app/api-calls";
 import { IMessage } from "@/lib/types";
 
 type Props = {
@@ -65,38 +70,42 @@ export const InputsBox = ({
 
     try {
       // Add the initial AI message
-      const messageId = messages.length - 1;
-      const newMessage: IMessage = {
-        id: String(messageId),
-        role: "assistant",
-        outfitGenerated: false,
-        diffusedImageUrl: null,
-        googleLensResponse: null,
-        content: "Generating outfit...",
-      };
-      setMessages((prev) => [...prev, newMessage]);
-
-      // Generate outfit
-      const { outfitUrl, outfitImage } = await generateOutfit(
+      // const messageId = messages.length - 1;
+      // const newMessage: IMessage = {
+      //   id: String(messageId),
+      //   role: "assistant",
+      //   outfitGenerated: false,
+      //   diffusedImageUrl: null,
+      //   googleLensResponse: null,
+      //   content: "Generating outfit...",
+      // };
+      // setMessages((prev) => [...prev, newMessage]);
+      const outfitPrompt = await generateOutfitPromptFromGemini(
         region,
         gender!,
         ocassion,
       );
-      updateAIMessage({ ...newMessage, outfitGenerated: true }, messageId);
+
+      // Generate outfit
+      // const { outfitUrl, outfitImage } = await generateOutfit(
+      //   region,
+      //   gender!,
+      //   ocassion,
+      // );
+      // updateAIMessage({ ...newMessage, outfitGenerated: true }, messageId);
 
       // Diffuse the user image with the outfit
-      const imageURL = await diffuse(outfitImage, userUploadedImage);
-      updateAIMessage({ ...newMessage, diffusedImageUrl: imageURL }, messageId);
+      // const imageURL = await diffuse(outfitImage, userUploadedImage);
+      // updateAIMessage({ ...newMessage, diffusedImageUrl: imageURL }, messageId);
 
       /* Search google lens for the outfit */
-      const googleLensResponse = await searchGoogleLens(outfitUrl);
-      updateAIMessage({ ...newMessage, googleLensResponse }, messageId);
+      // const googleLensResponse = await searchGoogleLens(outfitUrl);
+      // updateAIMessage({ ...newMessage, googleLensResponse }, messageId);
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setLoading(false);
-      setOcassion("");
-      setTimeout(() => setError(""), 5000);
+      setTimeout(() => setError(""), 8000);
       setShowImageUpload(false);
     }
   };

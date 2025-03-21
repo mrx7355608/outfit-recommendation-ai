@@ -6,13 +6,40 @@ const urlToFile = async (imgUrl: string) => {
   return file;
 };
 
+export const generateOutfitPromptFromGemini = async (
+  region: string,
+  gender: string,
+  ocassion: string,
+) => {
+  const loc = region.split(",");
+
+  const payload = {
+    region: loc[0],
+    city: loc[1],
+    country: loc[2],
+    age: 20,
+    gender,
+    ocassion,
+  };
+
+  const response = await fetch("/api/get-outfit-prompt", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const result = await response.json();
+  console.log(result.outfitPrompt);
+};
+
 export const generateOutfit = async (
   region: string,
   gender: string,
   ocassion: string,
 ) => {
   const manWoman = gender === "Male" ? "man" : "woman";
-  const prompt = `(${ocassion}), (I am a ${manWoman} living in ${region}), (full body image: 3.6)`;
+  const prompt = `${ocassion}, I am a ${manWoman} living in ${region}, i need a full body image`;
   const response = await fetch("/api/generate-outfits", {
     method: "POST",
     headers: {
