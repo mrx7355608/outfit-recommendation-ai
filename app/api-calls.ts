@@ -30,16 +30,10 @@ export const generateOutfitPromptFromGemini = async (
     body: JSON.stringify(payload),
   });
   const result = await response.json();
-  console.log(result.outfitPrompt);
+  return result.outfitPrompt;
 };
 
-export const generateOutfit = async (
-  region: string,
-  gender: string,
-  ocassion: string,
-) => {
-  const manWoman = gender === "Male" ? "man" : "woman";
-  const prompt = `${ocassion}, I am a ${manWoman} living in ${region}, i need a full body image`;
+export const generateOutfit = async (prompt: string) => {
   const response = await fetch("/api/generate-outfits", {
     method: "POST",
     headers: {
@@ -49,16 +43,7 @@ export const generateOutfit = async (
   });
 
   const result = await response.json();
-  if (!result.imageURL) {
-    throw new Error(result.error);
-  }
-
-  const file = await urlToFile(result.imageURL);
-  if (!file) {
-    throw new Error("There wan an error in converting the outfit url to image");
-  }
-
-  return { outfitUrl: result.imageURL, outfitImage: file };
+  return result;
 };
 
 export const diffuse = async (outfit: File, userUploadedImage: File | null) => {

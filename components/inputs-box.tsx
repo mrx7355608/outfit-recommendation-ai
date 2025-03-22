@@ -70,16 +70,16 @@ export const InputsBox = ({
 
     try {
       // Add the initial AI message
-      // const messageId = messages.length - 1;
-      // const newMessage: IMessage = {
-      //   id: String(messageId),
-      //   role: "assistant",
-      //   outfitGenerated: false,
-      //   diffusedImageUrl: null,
-      //   googleLensResponse: null,
-      //   content: "Generating outfit...",
-      // };
-      // setMessages((prev) => [...prev, newMessage]);
+      const messageId = messages.length - 1;
+      const newMessage: IMessage = {
+        id: String(messageId),
+        role: "assistant",
+        outfitGenerated: false,
+        diffusedImageUrl: null,
+        googleLensResponse: null,
+        content: "Generating outfit...",
+      };
+      setMessages((prev) => [...prev, newMessage]);
       const outfitPrompt = await generateOutfitPromptFromGemini(
         region,
         gender!,
@@ -87,16 +87,14 @@ export const InputsBox = ({
       );
 
       // Generate outfit
-      // const { outfitUrl, outfitImage } = await generateOutfit(
-      //   region,
-      //   gender!,
-      //   ocassion,
-      // );
-      // updateAIMessage({ ...newMessage, outfitGenerated: true }, messageId);
+      const result = await generateOutfit(outfitPrompt);
+      updateAIMessage(
+        { ...newMessage, diffusedImageUrl: result.imageURL[0].imageURL },
+        messageId,
+      );
 
       // Diffuse the user image with the outfit
       // const imageURL = await diffuse(outfitImage, userUploadedImage);
-      // updateAIMessage({ ...newMessage, diffusedImageUrl: imageURL }, messageId);
 
       /* Search google lens for the outfit */
       // const googleLensResponse = await searchGoogleLens(outfitUrl);

@@ -23,16 +23,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
       )}
       <div className={cn("flex w-full flex-col", isUser && "items-end")}>
         <div className="rounded-lg px-6 py-5 w-full bg-muted">
-          {message.outfitGenerated && (
-            <p>
-              Outfit generated! <br /> Applying outfit on your image...
-            </p>
-          )}
           {message.diffusedImageUrl && (
             <div className="my-4">
-              <p>
-                Operation completed! <br /> This is how you will look like:
-              </p>
               <Image
                 src={message.diffusedImageUrl}
                 alt="Uploaded image"
